@@ -1,2 +1,4 @@
 /* CSS declarations go here */
 .readed{border-color:black;}
+.post{cursor:pointer}
+.fav{margin-right:10px}

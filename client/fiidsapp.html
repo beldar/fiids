@@ -75,17 +75,33 @@
         </div><!--/row-->
   </template>
   <template name="activefeed">
-      <button id="frem" class="btn pull-right"><i class="icon-trash"></i> Remove feed</button>
+      {{#if currentFeed}}
+      <div class="well">
+          <button id="onlyunread" class="btn"><i class="icon-eye-close"></i> Show unread only</button>
+          <button id="expand" class="btn"><i class="icon-fullscreen"></i> Show expanded</button>
+          <button id="compress" class="btn"><i class="icon-resize-small"></i> Show contracted</button>
+          <button id="refresh" class="btn"><i class="icon-refresh"></i> Refresh</button>
+          <button id="frem" class="btn"><i class="icon-trash"></i> Remove feed</button>
+      </div>
+      
+      {{/if}}
       {{#each afeed}}
         {{>post}}
       {{/each}}
   </template>
   <template name="post">
-      <div class="well {{#if readed}}readed{{/if}}">
-          <h2><a target="_blank" href="{{link}}">{{title}}</a></h2>
+      <div class="well {{#if readed}}readed{{/if}} post">
+          <a class="exp pull-right"><i class="icon-resize-full"></i></a>
+          <a class="fav pull-right"><i class="{{#if isfavorite}}icon-star{{else}}icon-star-empty{{/if}}"></i></a>
+          <h3><a target="_blank" href="{{link}}">{{title}}</a></h3>
           <h4>{{author}} - {{normaldate}}</h4>
           <p>
-              {{{content}}}
+            <div class="content" style="display:none;">
+                    {{{content}}}
+            </div>
+            <div class="snippet">
+                    {{{contentSnippet}}}
+            </div>
           </p>
       </div>
   </template>
@@ -95,7 +111,7 @@
       {{/each}}
   </template>
   <template name="feed">
-      <li class="{{selected}}"><a href="#">{{feedname}} ({{countunread}}) </a> </li>
+      <li class="{{selected}}"><a href="#">{{feedname}} ({{unread}}) </a> </li>
   </template>
   <template name="header">
       <div class="navbar navbar-inverse navbar-fixed-top">

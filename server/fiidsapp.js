@@ -18,6 +18,12 @@ Meteor.startup(function () {
     });
 });
 
+UserPosts.allow({
+    update: function(userId,doc,fields,mod){
+        return doc.user === userId
+    }
+});
+
 Accounts.onCreateUser(function(options,user){
    var at = user.services.github.accessToken,
        result,
@@ -81,6 +87,7 @@ Meteor.methods({
                    });
                    UserPosts.insert({
                        postid: idp,
+                       feedid: fid,
                        user: this.userId,
                        readed: false,
                        favorite: false
@@ -88,6 +95,13 @@ Meteor.methods({
                }
                
            }
+       }else{
+           /**
+            * TODO: Check if feed exists but has no relation to user
+            *
+            */
+           var fu = UserFeeds.find({user:this.userId});
+           
        }
    },
    deletefeed: function(feedid){
@@ -95,6 +109,8 @@ Meteor.methods({
         * TODO: When a feed is deleted, don't delete de feed, delete the relation to the user!!
         */
        Feeds.remove(feedid);
+       Posts.remove({feedid:feedid});
+       //UserPosts
    }
 });
 

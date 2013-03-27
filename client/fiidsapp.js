@@ -39,6 +39,41 @@ Template.activefeed.events({
    "click #frem": function(){
        if(Session.get("active_feed"))
            Meteor.call("deletefeed", Session.get("active_feed"));
+   },
+   "click #expand": function(){
+       $(".snippet").hide();
+       $(".content").show();
+   },
+   "click #compress": function(){
+       $(".snippet").show();
+       $(".content").hide();
+   }
+});
+Template.post.events({
+   "click": function(){
+       var up = UserPosts.findOne({postid:this._id});
+       if(!up.readed)
+            UserPosts.update({_id:up._id}, {$set: {readed:true}});
+   },
+   "click .exp": function(evt,tmpl){
+       var ctn = tmpl.find('.content');
+       var snp = tmpl.find('.snippet');
+       var tg = evt.target.tagName=='I' ? $(evt.target) : $(evt.target).find('i');
+       if(ctn.style.display=='none'){
+           snp.style.display = 'none';
+           ctn.style.display = 'block';
+           tg.removeClass('icon-resize-full');
+           tg.addClass('icon-resize-small');
+       }else{
+           snp.style.display = 'block';
+           ctn.style.display = 'none';
+           tg.addClass('icon-resize-full');
+           tg.removeClass('icon-resize-small');
+       }
+   },
+   "click .fav": function(){
+       var up = UserPosts.findOne({postid:this._id});
+       UserPosts.update({_id:up._id}, {$set: {favorite:!up.favorite}});
    }
 });
 
@@ -56,11 +91,20 @@ Template.feeds.myfeeds = function(){
 Template.activefeed.afeed = function(){
    return Posts.find({feedid:Session.get("active_feed")});
 }
+Template.activefeed.currentFeed = function(){
+   return typeof Session.get("active_feed") !== 'undefined';
+}
 Template.feed.selected = function(){
     return Session.get("active_feed") == this._id ? 'active':'';
 }
+Template.feed.unread = function(){
+    return UserPosts.find({feedid:this._id, readed:false}).count();
+}
 Template.post.readed = function(){
     return UserPosts.find({postid:this._id, readed:true}).count();
+}
+Template.post.isfavorite = function(){
+    return UserPosts.find({postid:this._id, favorite:true}).count();
 }
 Template.post.normaldate = function(){
     return moment(this.publishedDate).fromNow();
