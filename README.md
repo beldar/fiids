@@ -25,6 +25,7 @@ Add packages
 	meteor add accounts-github
 	meteor add accounts-ui
 	meteor remove insecure
+	meteor remove autopublish
 
 Run app
 
