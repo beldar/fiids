@@ -6,21 +6,28 @@ var UserPosts = new Meteor.Collection("userposts");
 Meteor.startup(function () {
     console.log('Init');
     Meteor.publish('feeds', function(){
-        return Feeds.find({_id:{$in:_.pluck(UserFeeds.find({user:this.userId}).fetch(),'feedid')}});
+        return Feeds.find({users:this.userId});
     });
+    
     Meteor.publish('posts', function(){
-       var uf = Feeds.find({_id:{$in:_.pluck(UserFeeds.find({user:this.userId}).fetch(),'feedid')}}).fetch();
-       var pk = _.pluck(uf, '_id');
-       return Posts.find({feedid:{$in:pk}}); 
+       return Posts.find({users:this.userId}); 
     });
+    /*UserPosts.find({user:this.userId}).observe({
+        added: function(){
+            Meteor.publish('posts', function(){
+                var uf = Posts.find({_id:{$in:_.pluck(UserPosts.find({user:this.userId}).fetch(),'postid')}}).fetch();
+                var pk = _.pluck(uf, '_id');
+                return Posts.find({postid:{$in:pk}}); 
+            });
+        }
+    })*/
     Meteor.publish('userposts', function(){
        return UserPosts.find({user:this.userId}); 
     });
-    //Meteor.setInterval(function(){
-        console.log("Checking feeds");
-        //console.log("User id: "+Meteor.userId);
-        Meteor.call("refresh", false);
-    //},30000);
+    Meteor.publish('userfeeds', function(){
+       return UserFeeds.find({user:this.userId}); 
+    });
+
 });
 
 UserPosts.allow({
@@ -72,7 +79,7 @@ Meteor.methods({
                var fid = Feeds.insert({
                         feedurl: feedurl,
                         feedname: fd.title,
-                        countunread:entries.length
+                        users: [this.userId]
                     });
                UserFeeds.insert({
                    feedid:fid,
@@ -88,7 +95,8 @@ Meteor.methods({
                        publishedDate: v.publishedDate,
                        contentSnippet: v.contentSnippet,
                        content: v.content,
-                       categories: v.categories
+                       categories: v.categories,
+                       users: [this.userId]
                    });
                    UserPosts.insert({
                        postid: idp,
@@ -115,16 +123,17 @@ Meteor.methods({
         */
        Feeds.remove(feedid);
        Posts.remove({feedid:feedid});
+       UserFeeds.remove({feedid:feedid});
+       UserPosts.remove({feedid:feedid});
        //UserPosts
    },
    refresh: function(feedid){
-       var userId = Meteor.userId;
+       var userId = this.userId;
+       console.log('User id: '+userId);
        console.log('Refreshing feed: '+feedid);
        if(!feedid){
            console.log("Refreshing all feeds");
-           var fdid = _.pluck(UserFeeds.find({user:userId}).fetch(),'feedid');
-           console.log(fdid);
-           var uf = Feeds.find({_id:{$in:fdid}});
+           var uf = Feeds.find({users:{$in:[userId]}});
            console.log("Numberof feeds: "+uf.count());
            uf.forEach(function(feed){
                 console.log("Getting feed: "+feed.feedname);
@@ -147,7 +156,7 @@ Meteor.methods({
                 }else{
                    var fd = fs.data.responseData.feed;
                    var entries = fd.entries;
-                   Meteor.call("refreshposts",entries, userId);
+                   Meteor.call("refreshposts",feed,entries, userId);
                 } 
            }
        }
@@ -158,33 +167,36 @@ Meteor.methods({
         console.log("Checking for new posts");
         while(i<entries.length){
             var v = entries[i];
-            //console.log("Searching post from feed "+feed._id)
-            var p = Posts.findOne({feedid:feed._id,title:v.title});
-            var idp = false;
-            if(!p){
-                console.log("New post: "+v.title);
-                idp = Posts.insert({
-                    feedid: feed._id,
-                    title: v.title,
-                    link: v.link,
-                    author: v.author,
-                    publishedDate: v.publishedDate,
-                    contentSnippet: v.contentSnippet,
-                    content: v.content,
-                    categories: v.categories
-                });
-            }else
-                idp = p._id;
-            var up = UserPosts.findOne({user:userId,postid:idp});
-            if(!up){
-                console.log("New user post: "+idp);
-                UserPosts.insert({
-                    postid: idp,
-                    feedid: feed._id,
-                    user: userId,
-                    readed: false,
-                    favorite: false
-                });
+            if(typeof v !== 'undefined'){
+                //console.log("Searching post from feed "+feed._id)
+                var p = Posts.findOne({feedid:feed._id,title:v.title});
+                var idp = false;
+                if(!p){
+                    console.log("New post: "+v.title);
+                    idp = Posts.insert({
+                        feedid: feed._id,
+                        title: v.title,
+                        link: v.link,
+                        author: v.author,
+                        publishedDate: v.publishedDate,
+                        contentSnippet: v.contentSnippet,
+                        content: v.content,
+                        categories: v.categories,
+                        users: [this.userId]
+                    });
+                }else
+                    idp = p._id;
+                var up = UserPosts.findOne({user:userId,postid:idp});
+                if(!up){
+                    console.log("New user post: "+idp+" user: "+userId); 
+                    UserPosts.insert({
+                        postid: idp,
+                        feedid: feed._id,
+                        user: userId,
+                        readed: false,
+                        favorite: false
+                    });
+                }
             }
             i++;
         }

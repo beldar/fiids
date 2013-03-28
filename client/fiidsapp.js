@@ -1,6 +1,7 @@
 var Feeds = new Meteor.Collection("feeds");
 var Posts = new Meteor.Collection("posts");
 var UserPosts = new Meteor.Collection("userposts");
+var UserFeeds = new Meteor.Collection("userfeeds");
 
 /** Events **/
 Template.user_loggedout.events({
@@ -51,12 +52,18 @@ Template.activefeed.events({
    "click #refresh": function(){
        if(Session.get("active_feed"))
            Meteor.call("refresh", Session.get("active_feed"));
+   },
+   "click #onlyunread": function(){
+       $(".readed").hide();
+   },
+   "click #all": function(){
+       $(".post").show();
    }
 });
 Template.post.events({
    "click": function(){
        var up = UserPosts.findOne({postid:this._id});
-       if(!up.readed)
+       if(up && !up.readed)
             UserPosts.update({_id:up._id}, {$set: {readed:true}});
    },
    "click .exp": function(evt,tmpl){
@@ -86,6 +93,12 @@ Deps.autorun(function(){
    Meteor.subscribe("feeds");
    Meteor.subscribe("posts");
    Meteor.subscribe("userposts");
+   Meteor.subscribe("userfeeds");
+   //Meteor.setInterval(function(){
+        console.log("Checking feeds");
+        //console.log("User id: "+Meteor.userId);
+        Meteor.call("refresh", false);
+    //},30000);
 });
 
 /** Live data **/
@@ -111,5 +124,5 @@ Template.post.isfavorite = function(){
     return UserPosts.find({postid:this._id, favorite:true}).count();
 }
 Template.post.normaldate = function(){
-    return moment(this.publishedDate).fromNow();
+    return this.publishedDate!=null ? moment(this.publishedDate).fromNow():'';
 }
