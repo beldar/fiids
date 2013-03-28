@@ -47,6 +47,10 @@ Template.activefeed.events({
    "click #compress": function(){
        $(".snippet").show();
        $(".content").hide();
+   },
+   "click #refresh": function(){
+       if(Session.get("active_feed"))
+           Meteor.call("refresh", Session.get("active_feed"));
    }
 });
 Template.post.events({
@@ -89,7 +93,7 @@ Template.feeds.myfeeds = function(){
     return Feeds.find();
 }
 Template.activefeed.afeed = function(){
-   return Posts.find({feedid:Session.get("active_feed")});
+   return Posts.find({feedid:Session.get("active_feed")}, {sort:{publishedDate:-1}});
 }
 Template.activefeed.currentFeed = function(){
    return typeof Session.get("active_feed") !== 'undefined';
