@@ -22,7 +22,7 @@ Add packages
 	meteor add bootstrap
 	meteor add jquery
 	meteor add accounts-base
-	meteor add accounts-github
+	meteor add accounts-password
 	meteor add accounts-ui
 	meteor remove insecure
 	meteor remove autopublish

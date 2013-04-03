@@ -1,7 +1,6 @@
 var Feeds = new Meteor.Collection("feeds");
 var Posts = new Meteor.Collection("posts");
-var UserPosts = new Meteor.Collection("userposts");
-var UserFeeds = new Meteor.Collection("userfeeds");
+
 
 /** Events **/
 Template.user_loggedout.events({
@@ -62,9 +61,14 @@ Template.activefeed.events({
 });
 Template.post.events({
    "click": function(){
-       var up = UserPosts.findOne({postid:this._id});
-       if(up && !up.readed)
-            UserPosts.update({_id:up._id}, {$set: {readed:true}});
+        var uid = Meteor.userId();
+        var userIndex = _.indexOf(_.pluck(this.users, 'user'),uid);
+        if(userIndex!=-1 && !this.users[userIndex].readed){
+            var modifier = {$set:{}};
+            var field = "users."+userIndex+".readed";
+            modifier.$set[field] = true;
+            Posts.update(this._id, modifier);
+        }
    },
    "click .exp": function(evt,tmpl){
        var ctn = tmpl.find('.content');
@@ -82,9 +86,16 @@ Template.post.events({
            tg.removeClass('icon-resize-small');
        }
    },
-   "click .fav": function(){
-       var up = UserPosts.findOne({postid:this._id});
-       UserPosts.update({_id:up._id}, {$set: {favorite:!up.favorite}});
+   "click .fav": function(evt, tmpl){
+       var uid = Meteor.userId();
+       var userIndex = _.indexOf(_.pluck(this.users, 'user'),uid);
+       if(userIndex!=-1){
+            var modifier = {$set:{}};
+            var field = "users."+userIndex+".favorite";
+            var isfav = this.users[userIndex].favorite;
+            modifier.$set[field] = !isfav;
+            Posts.update(this._id, modifier);
+       }
    }
 });
 
@@ -92,8 +103,6 @@ Template.post.events({
 Deps.autorun(function(){
    Meteor.subscribe("feeds");
    Meteor.subscribe("posts");
-   Meteor.subscribe("userposts");
-   Meteor.subscribe("userfeeds");
    //Meteor.setInterval(function(){
         console.log("Checking feeds");
         //console.log("User id: "+Meteor.userId);
@@ -104,25 +113,44 @@ Deps.autorun(function(){
 /** Live data **/
 Template.feeds.myfeeds = function(){
     return Feeds.find();
-}
+};
 Template.activefeed.afeed = function(){
    return Posts.find({feedid:Session.get("active_feed")}, {sort:{publishedDate:-1}});
-}
+};
 Template.activefeed.currentFeed = function(){
    return typeof Session.get("active_feed") !== 'undefined';
-}
+};
 Template.feed.selected = function(){
     return Session.get("active_feed") == this._id ? 'active':'';
-}
+};
 Template.feed.unread = function(){
-    return UserPosts.find({feedid:this._id, readed:false}).count();
-}
+    var posts = Posts.find({feedid:this._id}).fetch();
+    var uid = Meteor.userId();
+    console.log(posts);
+    var unreaded = 0;
+    _.each(posts, function(el){
+        console.log(el.title);
+        var usr = _.find(el.users, function(us){return us.user==uid && !us.readed});
+        if(typeof usr !== "undefined") unreaded++;
+        //if(!el.users[uid].readed) unreaded++;
+    });
+    //var unreaded = _.where(, {user:Meteor.userId(), readed:false});
+    //console.log(users);
+    
+    return unreaded;
+};
 Template.post.readed = function(){
-    return UserPosts.find({postid:this._id, readed:true}).count();
-}
+    var uid = Meteor.userId();
+    var userIndex = _.indexOf(_.pluck(this.users, 'user'),uid);
+    var readed = this.users[userIndex].readed;
+    return readed;
+};
 Template.post.isfavorite = function(){
-    return UserPosts.find({postid:this._id, favorite:true}).count();
-}
+    var uid = Meteor.userId();
+    var userIndex = _.indexOf(_.pluck(this.users, 'user'),uid);
+    var favorite = this.users[userIndex].favorite;
+    return favorite;
+};
 Template.post.normaldate = function(){
-    return this.publishedDate!=null ? moment(this.publishedDate).fromNow():'';
-}
+    return this.publishedDate!==null ? moment(this.publishedDate).fromNow():'';
+};
