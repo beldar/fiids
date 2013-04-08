@@ -60,7 +60,7 @@ Template.activefeed.events({
    }
 });
 Template.post.events({
-   "click": function(){
+   "click": function(evt,tmpl){
         var uid = Meteor.userId();
         var userIndex = _.indexOf(_.pluck(this.users, 'user'),uid);
         if(userIndex!=-1 && !this.users[userIndex].readed){
@@ -68,6 +68,8 @@ Template.post.events({
             var field = "users."+userIndex+".readed";
             modifier.$set[field] = true;
             Posts.update(this._id, modifier);
+            tmpl.find('.snippet').style.display = 'none';
+            tmpl.find('.content').style.display = 'block';
         }
    },
    "click .exp": function(evt,tmpl){
@@ -103,11 +105,12 @@ Template.post.events({
 Deps.autorun(function(){
    Meteor.subscribe("feeds");
    Meteor.subscribe("posts");
-   //Meteor.setInterval(function(){
+   Meteor.setInterval(function(){
         console.log("Checking feeds");
-        //console.log("User id: "+Meteor.userId);
         Meteor.call("refresh", false);
-    //},30000);
+   },1800000);//30 min default
+   console.log("Checking feeds first time");
+   Meteor.call("refresh", false);
 });
 
 /** Live data **/
@@ -126,17 +129,11 @@ Template.feed.selected = function(){
 Template.feed.unread = function(){
     var posts = Posts.find({feedid:this._id}).fetch();
     var uid = Meteor.userId();
-    console.log(posts);
     var unreaded = 0;
     _.each(posts, function(el){
-        console.log(el.title);
         var usr = _.find(el.users, function(us){return us.user==uid && !us.readed});
         if(typeof usr !== "undefined") unreaded++;
-        //if(!el.users[uid].readed) unreaded++;
     });
-    //var unreaded = _.where(, {user:Meteor.userId(), readed:false});
-    //console.log(users);
-    
     return unreaded;
 };
 Template.post.readed = function(){

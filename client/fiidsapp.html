@@ -89,6 +89,7 @@
       {{#each afeed}}
         {{>post}}
       {{/each}}
+      <a class="btn btn-primary" href="#" id="getmore">Get more!</a>
   </template>
   <template name="post">
       <div class="well {{#if readed}}readed{{/if}} post">
@@ -96,6 +97,7 @@
           <a class="fav pull-right"><i class="{{#if isfavorite}}icon-star{{else}}icon-star-empty{{/if}}"></i></a>
           <h3><a target="_blank" href="{{link}}">{{title}}</a></h3>
           <h4>{{author}} - {{normaldate}}</h4>
+          {{#constant}}
           <p>
             <div class="content" style="display:none;">
                     {{{content}}}
@@ -104,6 +106,7 @@
                     {{{contentSnippet}}}
             </div>
           </p>
+          {{/constant}}
       </div>
   </template>
   <template name="feeds">
