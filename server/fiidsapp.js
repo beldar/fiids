@@ -21,6 +21,12 @@ Posts.allow({
         return true;
     }
 });
+Feeds.allow({
+    update: function(userId,doc,fields,mod){
+        //return _.contains(_.pluck(fields.users, user), userId);
+        return true;
+    }
+})
 Accounts.onCreateUser(function(options,user){
     user.profile = {};
     if(typeof options.services == 'undefined'){
@@ -180,7 +186,7 @@ Meteor.methods({
                     //Add all users subscribed to this feed
                     var pusers = [];
                     _.each(feed.users, function(el){
-                        pusers.push({user:el, readed:false, favorite:false});
+                        pusers.push({user:el.user, readed:false, favorite:false});
                     },this);
                     Posts.update(idp, {$set: {users:pusers}});
                 }

@@ -26,6 +26,7 @@ Template.main.events({
         var furl = $("#feedurl");
         if(furl.val()!="")
             Meteor.call("newfeed",furl.val());
+        furl.val('');
    } 
 });
 Template.feed.events({
@@ -57,6 +58,39 @@ Template.activefeed.events({
    },
    "click #all": function(){
        $(".post").show();
+   },
+   "click #addtag": function(evt, tmpl){
+       var inp = $('#taginput');
+       if(inp.val()!=""){
+           var tag = inp.val();
+           var uid = Meteor.userId();
+           var feed = Feeds.findOne(Session.get("active_feed"));
+           var userIndex = _.indexOf(_.pluck(feed.users, 'user'),uid);
+           if(userIndex!=-1 && !_.contains(feed.users[userIndex].tags,tag)){
+                var modifier = {$push:{}};
+                var field = "users."+userIndex+".tags";
+                modifier.$push[field] = tag;
+                Feeds.update(Session.get("active_feed"), modifier);
+           }
+           inp.val('');
+       }
+   },
+   "click .remtag": function(evt,tmpl){
+        var tg = evt.target.tagName=='A' ? $(evt.target) : $(evt.target).parent();
+        var tag = tg.prev().html();
+        var uid = Meteor.userId();
+        var feed = Feeds.findOne(Session.get("active_feed"));
+        var userIndex = _.indexOf(_.pluck(feed.users, 'user'),uid);
+        if(userIndex!=-1 && _.contains(feed.users[userIndex].tags,tag)){
+             var modifier = {$pull:{}};
+             var field = "users."+userIndex+".tags";
+             modifier.$pull[field] = tag;
+             Feeds.update(Session.get("active_feed"), modifier);
+        }
+   },
+   "keydown #taginput": function(evt){
+       if(evt.which === 13)
+           Template.activefeed._tmpl_data.events["click #addtag"][0].call();
    }
 });
 Template.post.events({
@@ -88,7 +122,7 @@ Template.post.events({
            tg.removeClass('icon-resize-small');
        }
    },
-   "click .fav": function(evt, tmpl){
+   "click .fav": function(){
        var uid = Meteor.userId();
        var userIndex = _.indexOf(_.pluck(this.users, 'user'),uid);
        if(userIndex!=-1){
@@ -123,8 +157,17 @@ Template.activefeed.afeed = function(){
 Template.activefeed.currentFeed = function(){
    return typeof Session.get("active_feed") !== 'undefined';
 };
+Template.activefeed.feedtags = function(){
+   var feed = Feeds.findOne({_id:Session.get("active_feed")});
+   if(typeof feed !== 'undefined'){
+        var uid = Meteor.userId();
+        var userIndex = _.indexOf(_.pluck(feed.users, 'user'),uid);
+        return feed.users[userIndex].tags;
+   }else
+       return [];
+};
 Template.feed.selected = function(){
-    return Session.get("active_feed") == this._id ? 'active':'';
+   return Session.get("active_feed") == this._id ? 'active':'';
 };
 Template.feed.unread = function(){
     var posts = Posts.find({feedid:this._id}).fetch();
