@@ -34,6 +34,8 @@ Template.feed.events({
        console.log('Feed selected');
        console.log(this);
        Session.set("active_feed", this._id);
+       Session.set("active_feeds", [this._id]);
+       Session.set("filters", {tags:[]});
    }
 });
 Template.activefeed.events({
@@ -91,6 +93,43 @@ Template.activefeed.events({
    "keydown #taginput": function(evt){
        if(evt.which === 13)
            Template.activefeed._tmpl_data.events["click #addtag"][0].call();
+   },
+   "click .tagtxt": function(evt){
+       var tg = $(evt.target);
+       if(typeof Session.get("filters") === 'undefined')
+           Session.set("filters", {tags:[tg.html()]});
+       else{
+           var fltr = Session.get("filters");
+           fltr.tags.push(tg.html());
+           Session.set("filters", fltr);
+       }
+       //Session.set("active_feeds",_.pluck(Feeds.find({users:{$elemMatch:{user:Meteor.userId(), tags:{$in:fltr.tags}}}}).fetch(), '_id'));
+       
+   },
+   "click #addtagfilter": function(){
+       var tag = $("#taginputfilter").val();
+       if(tag!=''){
+           console.log('New tag');
+           var fltr = Session.get("filters");
+           if(!_.contains(fltr.tags,tag)){
+                fltr.tags.push(tag);
+                Session.set("filters", fltr);
+                //Session.set("active_feeds",_.pluck(Feeds.find({users:{$elemMatch:{user:Meteor.userId(), tags:{$in:fltr.tags}}}}).fetch(), '_id'));
+           }
+       }
+   },
+   "click .remfilter": function(evt,tmpl){
+        var tg = evt.target.tagName=='A' ? $(evt.target) : $(evt.target).parent();
+        var tag = tg.prev().html();
+        var fltr = Session.get("filters");
+        console.log("Remove tag: "+tag);
+        fltr.tags = _.without(fltr.tags,tag);
+        Session.set("filters", fltr);
+        console.log(Session.get("filters").tags);
+        /*if(fltr.tags.length>0)
+            Session.set("active_feeds",_.pluck(Feeds.find({users:{$elemMatch:{user:Meteor.userId(), tags:{$in:fltr.tags}}}}).fetch(), '_id'));
+        else
+            Session.set("active_feeds", [Session.get("active_feed")]);*/
    }
 });
 Template.post.events({
@@ -139,6 +178,12 @@ Template.post.events({
 Deps.autorun(function(){
    Meteor.subscribe("feeds");
    Meteor.subscribe("posts");
+   if(typeof Session.get("filters") !== 'undefined'){
+       if(Session.get("filters").tags.length>0)
+           Session.set("active_feeds",_.pluck(Feeds.find({users:{$elemMatch:{user:Meteor.userId(), tags:{$in:Session.get("filters").tags}}}}).fetch(), '_id'));
+       else
+           Session.set("active_feeds", [Session.get("active_feed")]);
+   }
    Meteor.setInterval(function(){
         console.log("Checking feeds");
         Meteor.call("refresh", false);
@@ -152,11 +197,32 @@ Template.feeds.myfeeds = function(){
     return Feeds.find();
 };
 Template.activefeed.afeed = function(){
-   return Posts.find({feedid:Session.get("active_feed")}, {sort:{publishedDate:-1}});
+   return Posts.find({feedid:{$in: Session.get("active_feeds")}}, {sort:{publishedDate:-1}});
 };
 Template.activefeed.currentFeed = function(){
    return typeof Session.get("active_feed") !== 'undefined';
 };
+Template.activefeed.filters = function(){
+    if(typeof Session.get("filters") !== 'undefined' && Session.get("filters").tags.length>0){
+        return Session.get("filters").tags;
+    }else
+        return false;
+};
+Template.activefeed.alltags = function(){
+    var uid = Meteor.userId();
+    var tags = [];
+    var userIndex = -1;
+    Feeds.find().forEach(function(feed){
+        userIndex = _.indexOf(_.pluck(feed.users, 'user'),uid);
+        _.each(feed.users[userIndex].tags, function(tag){
+            if(!_.contains(tags, tag) && !_.contains(Session.get("filters").tags,tag))
+                tags.push(tag);
+        });
+    });
+    console.log(tags);
+    $("#taginputfilter").typeahead({source:tags, items:5});
+};
+
 Template.activefeed.feedtags = function(){
    var feed = Feeds.findOne({_id:Session.get("active_feed")});
    if(typeof feed !== 'undefined'){
@@ -167,7 +233,7 @@ Template.activefeed.feedtags = function(){
        return [];
 };
 Template.feed.selected = function(){
-   return Session.get("active_feed") == this._id ? 'active':'';
+   return (Session.get("active_feed") == this._id || _.contains(Session.get("active_feeds"), this._id)) ? 'active':'';
 };
 Template.feed.unread = function(){
     var posts = Posts.find({feedid:this._id}).fetch();
@@ -192,5 +258,5 @@ Template.post.isfavorite = function(){
     return favorite;
 };
 Template.post.normaldate = function(){
-    return this.publishedDate!==null ? moment(this.publishedDate).fromNow():'';
+    return this.publishedDate!==null ? moment('"'+this.publishedDate+'"',"X").fromNow():'';
 };

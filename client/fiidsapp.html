@@ -34,7 +34,7 @@
     <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../assets/ico/apple-touch-icon-114-precomposed.png">
       <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../assets/ico/apple-touch-icon-72-precomposed.png">
                     <link rel="apple-touch-icon-precomposed" href="../assets/ico/apple-touch-icon-57-precomposed.png">
-                                   <link rel="shortcut icon" href="../assets/ico/favicon.png">-->
+                                   --><link rel="shortcut icon" href="/img/favicon.png">
   </head>
 
   <body>
@@ -84,18 +84,25 @@
           <button id="refresh" class="btn"><i class="icon-refresh"></i> Refresh</button>
           <button id="frem" class="btn"><i class="icon-trash"></i> Remove feed</button>
           <br/><br/>
-          Tags:
-          {{#each feedtags}}
-          <span class="label label-info"><a href="#" class="tagtxt">{{this}}</a><a style="display:inline-block;margin-left:2px" class="remtag" href="#"><i class="icon-remove"></i></a></span>
-          {{/each}}
-          <input class="input-large" id="taginput" name="taginput" /><a href="#" id="addtag" class="btn" style="margin-left:10px">Add tag</a>
+          {{#if filters}}
+            Showing posts from Feeds with tags: 
+            {{#each filters}}
+                <span class="label label-info"><span>{{this}}</span><a style="display:inline-block;margin-left:2px" class="remfilter" href="#"><i class="icon-remove"></i></a></span>
+            {{/each}}
+            <input class="input-large" id="taginputfilter" name="taginputfilter" autocomplete="off" />{{alltags}}<a href="#" id="addtagfilter" class="btn" style="margin-left:10px">Add tag filter</a>
+          {{else}}
+            Tags:
+            {{#each feedtags}}
+            <span class="label label-info"><a href="#" class="tagtxt">{{this}}</a><a style="display:inline-block;margin-left:2px" class="remtag" href="#"><i class="icon-remove"></i></a></span>
+            {{/each}}
+            <input class="input-large" id="taginput" name="taginput" /><a href="#" id="addtag" class="btn" style="margin-left:10px">Add tag</a>
+          {{/if}}
       </div>
-      
-      {{/if}}
       {{#each afeed}}
         {{>post}}
       {{/each}}
       <a class="btn btn-primary" style="display:block" href="#" id="getmore">Get more!</a>
+      {{/if}}
   </template>
   <template name="post">
       <div id="{{_id}}" class="well {{#if readed}}readed{{/if}} post">
@@ -132,7 +139,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="brand" href="#">FiidsMe</a>
+          <a class="brand" href="#" style="padding-top: 5px;padding-bottom: 5px;">FiidsMe <img width="60" style="width:60px" src="/img/logo.png" /></a>
           <div class="nav-collapse collapse">
            
              {{> user_info}}

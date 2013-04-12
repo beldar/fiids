@@ -1,5 +1,5 @@
 /* CSS declarations go here */
-.readed{border-color:black;}
+.readed{border-color:black;cursor:default !important;}
 .post{cursor:pointer}
 .fav{margin-right:10px}
 .tagtxt{color:white}

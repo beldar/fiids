@@ -71,29 +71,32 @@ Meteor.methods({
            if(fs.error){
                    console.log('Error getting feed: '+err);
            }else{
-               var fd = fs.data.responseData.feed;
-               var entries = fd.entries;
-               console.log('New feed: '+fd.title);
-               var fid = Feeds.insert({
-                        feedurl: feedurl,
-                        feedname: fd.title,
-                        users: [{user:this.userId, tags:[], folder:""}],
-                        updated: moment().unix()
-                    });
-               for(var i in entries){
-                   var v = entries[i];
-                   Posts.insert({
-                       feedid: fid,
-                       title: v.title,
-                       link: v.link,
-                       author: v.author,
-                       publishedDate: v.publishedDate,
-                       contentSnippet: v.contentSnippet,
-                       content: v.content,
-                       categories: v.categories,
-                       users: [{user:this.userId, readed:false, favorite:false}]
-                   });
-               }
+               if(typeof fs.data.responseData !== 'undefined'){
+                    var fd = fs.data.responseData.feed;
+                    var entries = fd.entries;
+                    console.log('New feed: '+fd.title);
+                    var fid = Feeds.insert({
+                             feedurl: feedurl,
+                             feedname: fd.title,
+                             users: [{user:this.userId, tags:[], folder:""}],
+                             updated: moment().unix()
+                         });
+                    for(var i in entries){
+                        var v = entries[i];
+                        Posts.insert({
+                            feedid: fid,
+                            title: v.title,
+                            link: v.link,
+                            author: v.author,
+                            publishedDate: moment(v.publishedDate).unix(),
+                            contentSnippet: v.contentSnippet,
+                            content: v.content,
+                            categories: v.categories,
+                            users: [{user:this.userId, readed:false, favorite:false}]
+                        });
+                    }
+               }else
+                   console.log("Resonse Data undefined: "+fs.data);
                
            }
        }else{
@@ -177,7 +180,7 @@ Meteor.methods({
                         title: v.title,
                         link: v.link,
                         author: v.author,
-                        publishedDate: v.publishedDate,
+                        publishedDate: moment(v.publishedDate).unix(),
                         contentSnippet: v.contentSnippet,
                         content: v.content,
                         categories: v.categories,
