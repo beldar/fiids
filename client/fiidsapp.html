@@ -63,6 +63,7 @@
                 <div class="span12" style="margin-left:0">
                      <div class="well sidebar-nav">
                         <ul class="nav nav-list">
+                            <li><a id="seefav" href="#"><i class="icon-star"></i>Favorites</a></li>
                         {{>feeds}}
                         </ul>
                     </div><!--/.well -->
@@ -75,33 +76,38 @@
         </div><!--/row-->
   </template>
   <template name="activefeed">
-      {{#if currentFeed}}
-      <div class="well">
+      {{#if currentFeed}} 
+     <div class="well">
           <button id="all" class="btn"><i class="icon-eye-open"></i> Show all</button>
           <button id="onlyunread" class="btn"><i class="icon-eye-close"></i> Show unread only</button>
           <button id="expand" class="btn"><i class="icon-fullscreen"></i> Show expanded</button>
           <button id="compress" class="btn"><i class="icon-resize-small"></i> Show contracted</button>
+          {{#if noFeed}}
+          <button id="readall" class="btn"><i class="icon-eye-open"></i> Read all</button>
           <button id="refresh" class="btn"><i class="icon-refresh"></i> Refresh</button>
           <button id="frem" class="btn"><i class="icon-trash"></i> Remove feed</button>
+          {{/if}}
           <br/><br/>
+          {{#if noFeed}}
           {{#if filters}}
-            Showing posts from Feeds with tags: 
+            <i class="icon-tags"></i> Showing posts from Feeds with tags: 
             {{#each filters}}
                 <span class="label label-info"><span>{{this}}</span><a style="display:inline-block;margin-left:2px" class="remfilter" href="#"><i class="icon-remove"></i></a></span>
             {{/each}}
             <input class="input-large" id="taginputfilter" name="taginputfilter" autocomplete="off" />{{alltags}}<a href="#" id="addtagfilter" class="btn" style="margin-left:10px">Add tag filter</a>
           {{else}}
-            Tags:
+          <i class="icon-tags"></i> Tags:
             {{#each feedtags}}
             <span class="label label-info"><a href="#" class="tagtxt">{{this}}</a><a style="display:inline-block;margin-left:2px" class="remtag" href="#"><i class="icon-remove"></i></a></span>
             {{/each}}
             <input class="input-large" id="taginput" name="taginput" /><a href="#" id="addtag" class="btn" style="margin-left:10px">Add tag</a>
           {{/if}}
+          {{/if}}
       </div>
       {{#each afeed}}
         {{>post}}
       {{/each}}
-      <a class="btn btn-primary" style="display:block" href="#" id="getmore">Get more!</a>
+      <!--<a class="btn btn-primary" style="display:block" href="#" id="getmore">Get more!</a>-->
       {{/if}}
   </template>
   <template name="post">
@@ -158,8 +164,6 @@
       <div class="navbar-text pull-right">
           {{#if currentUser}}
             {{> user_loggedin}}
-          {{else}}
-            {{> user_loggedout}}
           {{/if}}
       </div>
   </template>
@@ -176,14 +180,11 @@
               <b class="caret"></b>
           </a>
           <ul class="dropdown-menu">
-              <li><a>Account Settings</a></li>
-              <li class="divider"></li>
+              <!--<li><a>Account Settings</a></li>
+              <li class="divider"></li>-->
               <li><a id="logout">Logout</a></li>
           </ul>
       </a>
       {{/if}}
-  </template>
-  <template name="user_loggedout">
-      <a id="login">Login with Github</a>
   </template>
       

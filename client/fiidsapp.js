@@ -3,7 +3,7 @@ var Posts = new Meteor.Collection("posts");
 
 
 /** Events **/
-Template.user_loggedout.events({
+/*Template.user_loggedout.events({
    "click #login": function(){
        Meteor.loginWithGithub({
            requestPermissions: ['user', 'public_repo']
@@ -12,7 +12,7 @@ Template.user_loggedout.events({
                console.log('Error during login: '+err);
        });
    } 
-});
+});*/
 Template.user_loggedin.events({
     "click #logout": function(){
        Meteor.logout(function(err){
@@ -27,15 +27,25 @@ Template.main.events({
         if(furl.val()!="")
             Meteor.call("newfeed",furl.val());
         furl.val('');
-   } 
+   },
+   "click #seefav": function(){
+       //Session.set("active_feed", undefined);
+       //Session.set("active_feeds", []);
+       Session.set("showingnofeed", true);
+       $("#seefav").parent().addClass('active');
+       Session.set("postsel",{users:{$elemMatch:{user:Meteor.userId(), favorite:true}}});
+   }
 });
 Template.feed.events({
    "click":function(){
        console.log('Feed selected');
-       console.log(this);
        Session.set("active_feed", this._id);
        Session.set("active_feeds", [this._id]);
        Session.set("filters", {tags:[]});
+       Session.set("postsel", {feedid:{$in: Session.get("active_feeds")}});
+       Session.set("postsort", {sort:{publishedDate:-1}});
+       Session.set("showingnofeed", false);
+       $("#seefav").parent().removeClass("active");
    }
 });
 Template.activefeed.events({
@@ -102,9 +112,7 @@ Template.activefeed.events({
            var fltr = Session.get("filters");
            fltr.tags.push(tg.html());
            Session.set("filters", fltr);
-       }
-       //Session.set("active_feeds",_.pluck(Feeds.find({users:{$elemMatch:{user:Meteor.userId(), tags:{$in:fltr.tags}}}}).fetch(), '_id'));
-       
+       }       
    },
    "click #addtagfilter": function(){
        var tag = $("#taginputfilter").val();
@@ -114,7 +122,6 @@ Template.activefeed.events({
            if(!_.contains(fltr.tags,tag)){
                 fltr.tags.push(tag);
                 Session.set("filters", fltr);
-                //Session.set("active_feeds",_.pluck(Feeds.find({users:{$elemMatch:{user:Meteor.userId(), tags:{$in:fltr.tags}}}}).fetch(), '_id'));
            }
        }
    },
@@ -125,11 +132,9 @@ Template.activefeed.events({
         console.log("Remove tag: "+tag);
         fltr.tags = _.without(fltr.tags,tag);
         Session.set("filters", fltr);
-        console.log(Session.get("filters").tags);
-        /*if(fltr.tags.length>0)
-            Session.set("active_feeds",_.pluck(Feeds.find({users:{$elemMatch:{user:Meteor.userId(), tags:{$in:fltr.tags}}}}).fetch(), '_id'));
-        else
-            Session.set("active_feeds", [Session.get("active_feed")]);*/
+   },
+   "click #readall": function(){
+        Meteor.call("readall", Session.get("active_feeds"));
    }
 });
 Template.post.events({
@@ -190,6 +195,7 @@ Deps.autorun(function(){
    },1800000);//30 min default
    console.log("Checking feeds first time");
    Meteor.call("refresh", false);
+   document.title = 'FiidsMe ('+Posts.find({users: {$elemMatch:{user:Meteor.userId(), readed:false}}}).count()+')';
 });
 
 /** Live data **/
@@ -197,10 +203,13 @@ Template.feeds.myfeeds = function(){
     return Feeds.find();
 };
 Template.activefeed.afeed = function(){
-   return Posts.find({feedid:{$in: Session.get("active_feeds")}}, {sort:{publishedDate:-1}});
+   return Posts.find(Session.get("postsel"), Session.get("postsort"));
 };
 Template.activefeed.currentFeed = function(){
    return typeof Session.get("active_feed") !== 'undefined';
+};
+Template.activefeed.noFeed = function(){
+   return !Session.get("showingnofeed");
 };
 Template.activefeed.filters = function(){
     if(typeof Session.get("filters") !== 'undefined' && Session.get("filters").tags.length>0){
@@ -233,17 +242,10 @@ Template.activefeed.feedtags = function(){
        return [];
 };
 Template.feed.selected = function(){
-   return (Session.get("active_feed") == this._id || _.contains(Session.get("active_feeds"), this._id)) ? 'active':'';
+   return ((Session.get("active_feed") == this._id || _.contains(Session.get("active_feeds"), this._id)) && !Session.get("showingnofeed")) ? 'active':'';
 };
 Template.feed.unread = function(){
-    var posts = Posts.find({feedid:this._id}).fetch();
-    var uid = Meteor.userId();
-    var unreaded = 0;
-    _.each(posts, function(el){
-        var usr = _.find(el.users, function(us){return us.user==uid && !us.readed});
-        if(typeof usr !== "undefined") unreaded++;
-    });
-    return unreaded;
+    return Posts.find({feedid:this._id, users: {$elemMatch:{user:Meteor.userId(), readed:false}}}).count();
 };
 Template.post.readed = function(){
     var uid = Meteor.userId();

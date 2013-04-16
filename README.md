@@ -1,6 +1,12 @@
 Fiids
 =====
 
+Test/Use
+========
+
+[http://fiids.meteor.com](http://fiids.meteor.com)
+
+
 How to install/run
 ==================
 

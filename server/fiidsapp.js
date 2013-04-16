@@ -202,6 +202,12 @@ Meteor.methods({
         var size = size || 80;
 
         return 'http://www.gravatar.com/avatar/' + MD5(email) + '.jpg?s=' + size;
+   },
+   readall: function(feedsids){
+       var uid = this.userId;
+       _.each(feedsids, function(fid){
+           Posts.update({feedid:fid, 'users.user': uid}, {$set: {'users.$.readed':true}}, {multi:true});
+       });
    }
 });
 
