@@ -42,8 +42,6 @@ Template.feed.events({
        Session.set("active_feed", this._id);
        Session.set("active_feeds", [this._id]);
        Session.set("filters", {tags:[]});
-       Session.set("postsel", {feedid:{$in: Session.get("active_feeds")}});
-       Session.set("postsort", {sort:{publishedDate:-1}});
        Session.set("showingnofeed", false);
        $("#seefav").parent().removeClass("active");
    }
@@ -111,6 +109,7 @@ Template.activefeed.events({
        else{
            var fltr = Session.get("filters");
            fltr.tags.push(tg.html());
+           console.log(fltr);
            Session.set("filters", fltr);
        }       
    },
@@ -180,6 +179,15 @@ Template.post.events({
 });
 
 /** Init **/
+Meteor.startup(function(){
+   Meteor.setInterval(function(){
+        console.log("Checking feeds");
+        Meteor.call("refresh", false);
+   },1800000);//30 min default
+   console.log("Checking feeds first time");
+   Meteor.call("refresh", false);
+});
+/** Dependencies **/
 Deps.autorun(function(){
    Meteor.subscribe("feeds");
    Meteor.subscribe("posts");
@@ -188,13 +196,10 @@ Deps.autorun(function(){
            Session.set("active_feeds",_.pluck(Feeds.find({users:{$elemMatch:{user:Meteor.userId(), tags:{$in:Session.get("filters").tags}}}}).fetch(), '_id'));
        else
            Session.set("active_feeds", [Session.get("active_feed")]);
+       console.log(Session.get("active_feeds"));
    }
-   Meteor.setInterval(function(){
-        console.log("Checking feeds");
-        Meteor.call("refresh", false);
-   },1800000);//30 min default
-   console.log("Checking feeds first time");
-   Meteor.call("refresh", false);
+   Session.set("postsel", {feedid:{$in: Session.get("active_feeds")}});
+   Session.set("postsort", {sort:{publishedDate:-1}});
    document.title = 'FiidsMe ('+Posts.find({users: {$elemMatch:{user:Meteor.userId(), readed:false}}}).count()+')';
 });
 
@@ -228,7 +233,6 @@ Template.activefeed.alltags = function(){
                 tags.push(tag);
         });
     });
-    console.log(tags);
     $("#taginputfilter").typeahead({source:tags, items:5});
 };
 
