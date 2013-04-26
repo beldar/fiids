@@ -107,7 +107,9 @@
       {{#each afeed}}
         {{>post}}
       {{/each}}
-      <!--<a class="btn btn-primary" style="display:block" href="#" id="getmore">Get more!</a>-->
+            {{#if therearemore}}
+                <a class="btn btn-primary" style="display:block" href="#" id="getmore">Get more!</a>
+            {{/if}}
       {{/if}}
   </template>
   <template name="post">

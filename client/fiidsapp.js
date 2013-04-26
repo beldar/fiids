@@ -33,6 +33,7 @@ Template.main.events({
        //Session.set("active_feeds", []);
        Session.set("showingnofeed", true);
        $("#seefav").parent().addClass('active');
+       Session.set("postLimit", 20);
        Session.set("postsel",{users:{$elemMatch:{user:Meteor.userId(), favorite:true}}});
    }
 });
@@ -43,6 +44,7 @@ Template.feed.events({
        Session.set("active_feeds", [this._id]);
        Session.set("filters", {tags:[]});
        Session.set("showingnofeed", false);
+       Session.set("postLimit", 20);
        $("#seefav").parent().removeClass("active");
    }
 });
@@ -134,6 +136,12 @@ Template.activefeed.events({
    },
    "click #readall": function(){
         Meteor.call("readall", Session.get("active_feeds"));
+   },
+   "click #getmore": function(){
+        var lim = Session.get("postLimit");
+        lim += 20;
+        Session.set("postLimit", lim);
+        return false;
    }
 });
 Template.post.events({
@@ -186,6 +194,7 @@ Meteor.startup(function(){
    },1800000);//30 min default
    console.log("Checking feeds first time");
    Meteor.call("refresh", false);
+   Session.set("postLimit", 20);
 });
 /** Dependencies **/
 Deps.autorun(function(){
@@ -199,7 +208,7 @@ Deps.autorun(function(){
        console.log(Session.get("active_feeds"));
    }
    Session.set("postsel", {feedid:{$in: Session.get("active_feeds")}});
-   Session.set("postsort", {sort:{publishedDate:-1}});
+   Session.set("postopts", {sort:{publishedDate:-1}, limit:Session.get("postLimit")});
    document.title = 'FiidsMe ('+Posts.find({users: {$elemMatch:{user:Meteor.userId(), readed:false}}}).count()+')';
 });
 
@@ -208,7 +217,7 @@ Template.feeds.myfeeds = function(){
     return Feeds.find();
 };
 Template.activefeed.afeed = function(){
-   return Posts.find(Session.get("postsel"), Session.get("postsort"));
+   return Posts.find(Session.get("postsel"), Session.get("postopts"));
 };
 Template.activefeed.currentFeed = function(){
    return typeof Session.get("active_feed") !== 'undefined';
@@ -235,7 +244,9 @@ Template.activefeed.alltags = function(){
     });
     $("#taginputfilter").typeahead({source:tags, items:5});
 };
-
+Template.activefeed.therearemore = function(){
+    return Posts.find(Session.get("postsel")).count()>Session.get("postLimit");
+}
 Template.activefeed.feedtags = function(){
    var feed = Feeds.findOne({_id:Session.get("active_feed")});
    if(typeof feed !== 'undefined'){
